@@ -11,7 +11,7 @@
 
   <title>
     
-      鸣叫的山河夜叉 &middot; 中间无锋大巧不工
+      Rate Limit 的通用做法 &middot; 鸣叫的山河夜叉
     
   </title>
 
@@ -86,18 +86,7 @@
       </div>
 
       <div class="container content">
-        <div class="posts">
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="/backend/2017/05/22/rake-limit/">
-        Rate Limit 的通用做法
-      </a>
-    </h1>
-
-    <span class="post-date">22 May 2017</span>
-
-    <p>在网站开发的过程中，难免会碰到需要限制api被滥用的情况，尤其是一些收费的api，如发短信的api接口。我们需要控制用户在一个时间段内发送的次数。</p>
+        <p>在网站开发的过程中，难免会碰到需要限制api被滥用的情况，尤其是一些收费的api，如发短信的api接口。我们需要控制用户在一个时间段内发送的次数。</p>
 
 <p>一种直觉的做法，就是设置counter，每次调用api的时候，counter加一，然后每隔一段时间把counter清零。
 这个做法的缺点是边界情况，假设我们想限制一个api每分钟调用不超过10次，那么，按照上面的做法，用户在59秒的时候调用了10次API，这个调用频率是合法的，然后在2秒后由于counter被清零了，用户又一下子调用了10次。那么问题来了，这样，相当于用户在3秒内调用了20次！</p>
@@ -129,20 +118,6 @@
 </div>
 
 <p>通过这种算法，就能在占用最小资源的情况下实现令牌桶算法！</p>
-
-
-  </div>
-  
-</div>
-
-<div class="pagination">
-  
-    <span class="pagination-item older">Older</span>
-  
-  
-    <span class="pagination-item newer">Newer</span>
-  
-</div>
 
 
       </div>

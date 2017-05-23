@@ -1,16 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
- <title></title>
- <link href="http://localhost:4000/atom.xml" rel="self"/>
- <link href="http://localhost:4000/"/>
- <updated>2017-05-17T14:39:59+08:00</updated>
- <id>http://localhost:4000</id>
+ <title>鸣叫的山河夜叉</title>
+ <link href="http://www.example.com/some/subdir//atom.xml" rel="self"/>
+ <link href="http://www.example.com/some/subdir//"/>
+ <updated>2017-05-23T22:05:13+08:00</updated>
+ <id></id>
  <author>
-   <name></name>
-   <email></email>
+   <name>Julien LU</name>
+   <email>julien.luxiao@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Rate Limit 的通用做法</title>
+   <link href="/backend/2017/05/22/rake-limit/"/>
+   <updated>2017-05-22T09:12:24+08:00</updated>
+   <id>http://www.example.com/some/subdir//backend/2017/05/22/rake-limit</id>
+   <content type="html">&lt;p&gt;在网站开发的过程中，难免会碰到需要限制api被滥用的情况，尤其是一些收费的api，如发短信的api接口。我们需要控制用户在一个时间段内发送的次数。&lt;/p&gt;
+
+&lt;p&gt;一种直觉的做法，就是设置counter，每次调用api的时候，counter加一，然后每隔一段时间把counter清零。
+这个做法的缺点是边界情况，假设我们想限制一个api每分钟调用不超过10次，那么，按照上面的做法，用户在59秒的时候调用了10次API，这个调用频率是合法的，然后在2秒后由于counter被清零了，用户又一下子调用了10次。那么问题来了，这样，相当于用户在3秒内调用了20次！&lt;/p&gt;
+
+&lt;p&gt;所以，通常的的做法是使用&lt;a href=&quot;http://baike.baidu.com/item/%E4%BB%A4%E7%89%8C%E6%A1%B6%E7%AE%97%E6%B3%95&quot;&gt;令牌桶算法&lt;/a&gt; ，也就是每隔一段时间给这个接口添加一个令牌，当api被调用的时候，就会消耗一个令牌，如果没有令牌了，就不允许调用，以此来显示接口不会被滥用。&lt;/p&gt;
+
+&lt;p&gt;让我们看一下这个算法如何解决之前算法的边界问题：&lt;/p&gt;
+
+&lt;p&gt;还是同样的情况，限制一个api每分钟调用不超过10次。于是，根据令牌桶算法，每隔10秒往桶里添加一个令牌。那么当用户在59秒的时候只能调用9次api，然后在下一分钟，由于桶中的令牌是逐个增加，所以，用户在任意的60秒内，桶内的令牌都不会超过10个。&lt;/p&gt;
+
+&lt;p&gt;其实，这个算法比较理想化，因为如果完全按照这个算法实现，需要创建一个线程去一直去算，如果有多个api或者同一个api有不同的设置就需要多个线程，十分消耗系统资源。而且如果有api很少被调用，则又浪费了系统资源。&lt;/p&gt;
+
+&lt;p&gt;Google的java库&lt;a href=&quot;https://github.com/google/guava&quot;&gt;guava&lt;/a&gt;提供了一种比较聪明的解法：&lt;/p&gt;
+
+&lt;p&gt;建立一个 api_rate_limits 的表，用来记录资源的令牌数量。有两个字段 &lt;code class=&quot;highlighter-rouge&quot;&gt;last_updated_at&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;token&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;last_updated_at&lt;/code&gt;表示上一次更新令牌数量的时间，而&lt;code class=&quot;highlighter-rouge&quot;&gt;token&lt;/code&gt;表示上一次更新后的令牌数量。
+每次调用api的时候，需要先更新令牌的数量, 算法为:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;获得当前时间和上次时间的差值&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;添加令牌的速率 * 时间差&lt;/code&gt; 获得可以增加多少令牌&lt;/li&gt;
+  &lt;li&gt;最后从 &lt;code class=&quot;highlighter-rouge&quot;&gt;当前可获得令牌数 + 剩余令牌数&lt;/code&gt; 与 &lt;code class=&quot;highlighter-rouge&quot;&gt;最大令牌数&lt;/code&gt; 中取一个最小值，保证获得的令牌不会超过最大的令牌数&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;伪代码如下&lt;/p&gt;
+
+&lt;div class=&quot;language-ruby highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Time&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;now&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;last_updated_at&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rate&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tokens&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;max_tokens&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;通过这种算法，就能在占用最小资源的情况下实现令牌桶算法！&lt;/p&gt;
+
+</content>
+ </entry>
  
 
 </feed>
