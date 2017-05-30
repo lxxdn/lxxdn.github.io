@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
  <title>鸣叫的山河夜叉</title>
- <link href="http://www.example.com/some/subdir//atom.xml" rel="self"/>
- <link href="http://www.example.com/some/subdir//"/>
- <updated>2017-05-23T22:05:13+08:00</updated>
- <id></id>
+ <link href="http://localhost:4000/atom.xml" rel="self"/>
+ <link href="http://localhost:4000/"/>
+ <updated>2017-05-30T09:46:42+08:00</updated>
+ <id>http://localhost:4000</id>
  <author>
    <name>Julien LU</name>
    <email>julien.luxiao@gmail.com</email>
@@ -14,9 +14,9 @@
  
  <entry>
    <title>Rate Limit 的通用做法</title>
-   <link href="/backend/2017/05/22/rake-limit/"/>
+   <link href="http://localhost:4000/backend/2017/05/22/rake-limit/"/>
    <updated>2017-05-22T09:12:24+08:00</updated>
-   <id>http://www.example.com/some/subdir//backend/2017/05/22/rake-limit</id>
+   <id>http://localhost:4000/backend/2017/05/22/rake-limit</id>
    <content type="html">&lt;p&gt;在网站开发的过程中，难免会碰到需要限制api被滥用的情况，尤其是一些收费的api，如发短信的api接口。我们需要控制用户在一个时间段内发送的次数。&lt;/p&gt;
 
 &lt;p&gt;一种直觉的做法，就是设置counter，每次调用api的时候，counter加一，然后每隔一段时间把counter清零。
