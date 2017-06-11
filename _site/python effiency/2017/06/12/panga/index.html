@@ -11,7 +11,7 @@
 
   <title>
     
-      鸣叫的山河夜叉 &middot; 重剑无锋大巧不工
+      Panga &middot; 鸣叫的山河夜叉
     
   </title>
 
@@ -90,58 +90,73 @@
       </div>
       
       <div class="container content">
-        <div class="posts">
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="/python%20effiency/2017/06/12/panga/">
-        Panga
-      </a>
-    </h1>
-
-    <span class="post-date">12 Jun 2017</span>
-
-    <h2 id="背景">背景</h2>
+        <div class="post">
+  <h1 class="post-title">Panga</h1>
+  <span class="post-date">12 Jun 2017</span>
+  <h2 id="背景">背景</h2>
 <p>作为一个码农，总是需要记忆一些新的命令行工具的用法，参数，语言的语法。而由于我记忆力不好，常常会记住这个命令，就忘记另一个命令。或是一些已经记住的东西，一段时间不用又忘记了。</p>
 
 <p>归根结底，就是这些内容还没有被归入长期记忆中。 人的记忆是有规律的，一开始放在工作记忆区，这个记忆区的特点是记得快，忘得也快。然后经过一些复习，会进入短期记忆。进入短期记忆的内容再经过比较长时间的复习，巩固，最终进入长期记忆。一旦内容进入了长期记忆，在相当长的一段时间内都不会忘记。而想要将记忆的内容转换为长期记忆，需要制定一个比较科学的记忆计划。根据 <a href="https://zh.wikipedia.org/wiki/%E9%81%97%E5%BF%98%E6%9B%B2%E7%BA%BF">遗忘曲线</a>。 如果能有个软件能根据这个曲线定期提醒你回顾复习你想要记忆的东西，就能以比较高的效率将想要记忆的内容放入长期记忆中了。</p>
 
+<!--more-->
 
-    <a href="/python%20effiency/2017/06/12/panga/">Read on →</a>
-  </div>
-  
-  <div class="post">
-    <h1 class="post-title">
-      <a href="/backend/2017/05/22/rake-limit/">
-        Rate Limit 的通用做法
-      </a>
-    </h1>
+<p>我对这个软件有两个需求：</p>
 
-    <span class="post-date">22 May 2017</span>
+<ol>
+  <li>内容保存在本地</li>
+  <li>我能够被动的接收到提醒要求</li>
+</ol>
 
-    <p>在网站开发的过程中，难免会碰到需要限制api被滥用的情况，尤其是一些收费的api，如发短信的api接口。我们需要控制用户在一个时间段内发送的次数。</p>
+<p>市面上确实有不少根据遗忘曲线去背单词的软件，但是对能够自定义复习内容的软件却不多。试过几款之后，觉得都不是很满意，恰巧我有学习Python的需求，所以用 Python 写了这么一个小工具 <a href="https://github.com/lxxdn/Panga">Panga</a></p>
 
-<p>一种直觉的做法，就是设置counter，每次调用api的时候，counter加一，然后每隔一段时间把counter清零。
-这个做法的缺点是边界情况，假设我们想限制一个api每分钟调用不超过10次，那么，按照上面的做法，用户在59秒的时候调用了10次API，这个调用频率是合法的，然后在2秒后由于counter被清零了，用户又一下子调用了10次。那么问题来了，这样，相当于用户在3秒内调用了20次！</p>
+<h2 id="介绍">介绍</h2>
 
-<p>所以，通常的的做法是使用<a href="http://baike.baidu.com/item/%E4%BB%A4%E7%89%8C%E6%A1%B6%E7%AE%97%E6%B3%95">令牌桶算法</a> ，也就是每隔一段时间给这个接口添加一个令牌，当api被调用的时候，就会消耗一个令牌，如果没有令牌了，就不允许调用，以此来显示接口不会被滥用。</p>
+<p>这个工具有按照场景分为两部分：<code class="highlighter-rouge">收集</code>和<code class="highlighter-rouge">提醒</code></p>
 
+<h3 id="收集">收集</h3>
 
-    <a href="/backend/2017/05/22/rake-limit/">Read on →</a>
-  </div>
-  
+<p>收集也分为两个动作： 用户收集记忆的内容 和 Panga 获得用户想要记忆的内容保存在数据库中</p>
+
+<p>当用户有需要记忆的内容时，通过邮件将内容以特定的标题发送到特定的邮箱用户这边就结束了。为了提高效率，用链接的方式省去了输入邮箱地址和标题的时间 <code class="highlighter-rouge">mailto:abc@example.com?Subject=[Panga]</code> 在浏览器和手机上各创建这样的链接，就能时间快速输入</p>
+
+<p>Panga则是一个长期跑的后台任务，他会定期检查特定邮箱中的未读邮件，如果邮件的标题符合要求，就会读取邮件内容，将内容存入数据库。Panga的数据结构比较简单：</p>
+
+<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+    </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="s2">"xxx"</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"round"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+    </span><span class="nt">"created_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2017-06-01 16:54:17"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
 </div>
 
-<div class="pagination">
-  
-    <span class="pagination-item older">Older</span>
-  
-  
-    <span class="pagination-item newer">Newer</span>
-  
+<p><code class="highlighter-rouge">content</code>是需要记忆的内容，<code class="highlighter-rouge">round</code>是当前记忆的轮数，按照遗忘曲线不同的轮数是有不同的复习时间间隔 <code class="highlighter-rouge">REMIND_INVERVAL = [1, 2, 4, 7, 14, 30, 60, 180, 360]</code></p>
+
+<p>第0轮，是创建日期之后一天复习；第1轮，是创建日期之后的第二天复习。以此类推。</p>
+
+<p>由于数据结构简单，就用一个json文件作为数据库保存数据了。</p>
+
+<h3 id="提醒">提醒</h3>
+
+<p>由于我希望被动提醒，所以我决定通过邮件推送的形式。开了手机推送，我就不会错过了。
+根据之前的描述，每天Panga会检查一遍所有的内容，并选出需要提醒的内容，最后通过邮件的形式发送到我的邮箱</p>
+
+<h2 id="安装方法">安装方法</h2>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code>git clone git@github.com:lxxdn/Panga.git
+<span class="nb">cd </span>Panga
+pip install -r requirements.txt
+
+cp secrets.example.yml secrets.yml
+</code></pre>
 </div>
 
+<p>在 <code class="highlighter-rouge">secrets</code> 中加入你的邮箱的credentials</p>
 
+<h2 id="最后">最后</h2>
+<p>希望这个项目能够给使用者带来方便，如果有什么实用方法上的问题，也欢迎大家在Github上联系我。</p>
+
+
+</div>
       </div>
     </div>
 
